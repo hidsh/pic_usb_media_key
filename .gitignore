@@ -1,3 +1,6 @@
 *~
 *.bak*
 
+/USB/Device - HID - Keyboard/Firmware/MPLAB.X/build/
+/USB/Device - HID - Keyboard/Firmware/MPLAB.X/debug/
+/USB/Device - HID - Keyboard/Firmware/MPLAB.X/dist/

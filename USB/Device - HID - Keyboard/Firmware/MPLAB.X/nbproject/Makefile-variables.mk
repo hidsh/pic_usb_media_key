@@ -1,0 +1,13 @@
+#
+# Generated - do not edit!
+#
+# NOCDDL
+#
+CND_BASEDIR=`pwd`
+# LPC_USB_Development_Kit_PIC18F14K50 configuration
+CND_ARTIFACT_DIR_LPC_USB_Development_Kit_PIC18F14K50=dist/LPC_USB_Development_Kit_PIC18F14K50/production
+CND_ARTIFACT_NAME_LPC_USB_Development_Kit_PIC18F14K50=MPLAB.X.production.hex
+CND_ARTIFACT_PATH_LPC_USB_Development_Kit_PIC18F14K50=dist/LPC_USB_Development_Kit_PIC18F14K50/production/MPLAB.X.production.hex
+CND_PACKAGE_DIR_LPC_USB_Development_Kit_PIC18F14K50=${CND_DISTDIR}/LPC_USB_Development_Kit_PIC18F14K50/package
+CND_PACKAGE_NAME_LPC_USB_Development_Kit_PIC18F14K50=mplab.x.tar
+CND_PACKAGE_PATH_LPC_USB_Development_Kit_PIC18F14K50=${CND_DISTDIR}/LPC_USB_Development_Kit_PIC18F14K50/package/mplab.x.tar

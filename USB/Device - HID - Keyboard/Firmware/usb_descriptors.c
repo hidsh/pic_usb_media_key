@@ -244,10 +244,10 @@ sizeof(sd001),USB_DESCRIPTOR_STRING,
 }};
 
 //Product string descriptor
-ROM struct{BYTE bLength;BYTE bDscType;WORD string[13];}sd002={
+ROM struct{BYTE bLength;BYTE bDscType;WORD string[10];}sd002={
 sizeof(sd002),USB_DESCRIPTOR_STRING,
-{'K','e','y','b','o','a','r','d',' ','D','e','m','o'
-}};
+{'M','e','d','i','a',' ','K','e','y','s'} // gnrr
+};
 
 //Class specific descriptor - HID Keyboard
 ROM struct{BYTE report[HID_RPT01_SIZE];}hid_rpt01={

@@ -124,6 +124,32 @@ BOOL Keyboard_out;
 BOOL BlinkStatusValid;
 DWORD CountdownTimerToShowUSBStatusOnLEDs;
 
+// gnrr
+#define TMR0_VALUE 37500                            // 10ms (1/12MHz * 4 * 2 * 15000)
+#define BUFSZ       3                               // debounce buffer
+#define TRUE        1
+#define FALSE       0
+
+#define SW_MAX      6
+#define SW_RELEASE  1
+#define SW_PRESS    0
+
+const BYTE kbd_report[SW_MAX][8] = {
+//      0(MODIFIER KEYS)            1(FIXED)     2          3         4         5         6         7
+    {KEY_MOD_CMD_L | KEY_MOD_OPT_L, KEY_NONE, KEY_EJECT, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE},  // 0:SLEEP
+    {KEY_MOD_NONE,                  KEY_NONE, KEY_F,     KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE},  // 1:F
+    {KEY_MOD_NONE,                  KEY_NONE, KEY_SPACE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE},  // 2:SPACE
+    {KEY_MOD_NONE,                  KEY_NONE, KEY_RIGHT, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE},  // 3:RIGHT
+    {KEY_MOD_NONE,                  KEY_NONE, KEY_LEFT,  KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE},  // 4:LEFT
+    {KEY_MOD_NONE,                  KEY_NONE, KEY_NONE,  KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE},  // 5:RESERVE
+};
+
+const BYTE kbd_report_none[8] = {
+     KEY_MOD_NONE,                KEY_NONE, KEY_NONE,  KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE
+};
+
+BYTE sw_buf[BUFSZ];                                 // 0:pressed   1:released
+    
 /** PRIVATE PROTOTYPES *********************************************/
 static void InitializeSystem(void);
 void ProcessIO(void);
@@ -134,6 +160,10 @@ void USBCBSendResume(void);
 void Keyboard(void);
 
 void USBHIDCBSetReportComplete(void);
+
+// gnrr
+void read_sw(void);
+BOOL get_sw_state(BYTE key_num);
 
 /** VECTOR REMAPPING ***********************************************/
 #if defined(__18CXX)
@@ -227,7 +257,8 @@ void USBHIDCBSetReportComplete(void);
         #if defined(USB_INTERRUPT)
 	        USBDeviceTasks();
         #endif
-		// read_rotary_encoder();
+
+            read_sw();
 	
 	}	//This return will be a "retfie fast", since this is in a #pragma interrupt section 
 	#pragma interruptlow YourLowPriorityISRCode
@@ -270,7 +301,6 @@ void USBHIDCBSetReportComplete(void);
 		//Clear the interrupt flag
 		//Etc.
         #if defined(USB_INTERRUPT)
-
 	        USBDeviceTasks();
         #endif
 	}
@@ -425,17 +455,30 @@ void UserInit(void)
     lastINTransmission = 0;
     lastOUTTransmission = 0;
 
-    
     // media keys
 #if __18F14K50
     ANSEL  = 0b00000000;            // all digital
     ANSELH = 0b00000000;            // all digital
-    TRISC  = 0b11111111;            // all input
-    INTCONbits.GIE = 1;             // enable global int
-#else
-#error not defined INTCON
-#endif
+    TRISC  = 0b11111111;            // all input for sw
 
+    // TIMER
+    T0CONbits.T0CS = 0;                             // clock source = internal(12MHz)
+    T0CONbits.PSA = 0;                              // assign pre-scaller to timer0
+    T0CONbits.T0PS = 2;                             // ple-scaller 1:8
+    TMR0L = (BYTE)(TMR0_VALUE & 0x00FF);
+    TMR0H = (BYTE)((TMR0_VALUE >> 8) & 0x00FF);
+    T0CONbits.T08BIT = 0;                           // 16bit timer
+	INTCONbits.TMR0IE = 1;                          // TMR0 int enable
+
+    INTCONbits.GIE = 1;                             // enable global int
+#endif
+    
+    {
+    BYTE i;
+    for(i=0; i<BUFSZ; i++)
+        sw_buf[i] = 0xFF;                              // 0:pressed, 1:released
+
+	}
 }//end UserInit
 
 
@@ -493,42 +536,64 @@ void ProcessIO(void)
      
 }//end ProcessIO
 
-void send_report(BYTE key)
+void read_sw(void)
 {
-    hid_report_in[0] = 0;
-    hid_report_in[1] = 0;
-    hid_report_in[2] = key;
-    hid_report_in[3] = 0;
-    hid_report_in[4] = 0;
-    hid_report_in[5] = 0;
-    hid_report_in[6] = 0;
-    hid_report_in[7] = 0;
+    static BYTE i = 0;
+    
+#if __18F14K50
+#define INT_FLAG INTCONbits.TMR0IF
+#else
+#error not defined INTCON
+#endif
 
-    //Send the 8 byte packet over USB to the host.
-    lastINTransmission = HIDTxPacket(HID_EP, (BYTE*)hid_report_in, 0x08);
+    if(INT_FLAG == 0) return;
+    INT_FLAG = 0;                                   // clear int flag
+
+    // reset timer
+    TMR0L = (BYTE)(TMR0_VALUE & 0x00FF);
+    TMR0H = (BYTE)((TMR0_VALUE >> 8) & 0x00FF);
+
+    sw_buf[i] = PORTC;                              // RC0..RC5: SW
+    i = (i + 1) % BUFSZ;
+#undef INT_FLAG
+}
+
+BOOL get_sw_state(BYTE key_num)
+{
+    BYTE i;
+    BYTE lo_cnt = 0;
+    
+    for(i=0; i<BUFSZ; i++)
+        if((sw_buf[i] & (1 << key_num)) == 0) lo_cnt++;
+    
+    return (lo_cnt == BUFSZ)? SW_PRESS : SW_RELEASE;
 }
 
 void Keyboard(void)
 {
+    static BYTE cnt = 0;
+    static BYTE sw_old[SW_MAX] = {
+        SW_RELEASE, SW_RELEASE, SW_RELEASE, SW_RELEASE, SW_RELEASE, SW_RELEASE
+    };
+
+    BOOL sw;
+    BYTE *rep = kbd_report_none;
+    
     //Check if the IN endpoint is not busy, and if it isn't check if we want to send
     //keystroke data to the host.
     if(!HIDTxHandleBusy(lastINTransmission))
     {
-        BYTE key;
-        BOOL sw;
-        static BOOL sw_old = 1;
-
-        sw = PORTCbits.RC0;
-        if((sw_old == 0) && (sw == 1))
-            key = 4;
-        else
-            key = 0;
+        sw = get_sw_state(cnt);
         
-        send_report(key);
-        sw_old = sw;
+        if((sw_old[cnt] == SW_PRESS) && (sw == SW_RELEASE))
+            rep = kbd_report[cnt];
+        
+        //Send the 8 byte packet over USB to the host.
+        lastINTransmission = HIDTxPacket(HID_EP, rep, 8);
+        
+        sw_old[cnt] = sw;
+        cnt = (cnt + 1) % SW_MAX;
     }
-   
-    return;		
 }//end keyboard()
 
 

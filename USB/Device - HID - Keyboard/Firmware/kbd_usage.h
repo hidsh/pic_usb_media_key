@@ -55,12 +55,12 @@ extern "C" {
     #define  KEY_SPACE            44
     #define  KEY_UNDERSCORE       45
     #define  KEY_PLUS             46
-//  #define  KEY_[ {              47
-//  #define  KEY_] }              48
+    #define  KEY_BRACKET_L        47 // [ {
+    #define  KEY_BRACKET_R        48 // ] }
     #define  KEY_BACKSLASH        49
-//  #define  KEY_# ~              50
-//  #define  KEY_; :              51
-//  #define  KEY_? "              52
+    #define  KEY_SHARP            50 // # ~
+    #define  KEY_COLON            51 // ; :
+    #define  KEY_QUESTION         52 // ? "
     #define  KEY_TILDE            53
     #define  KEY_COMMA            54
     #define  KEY_DOT              55
@@ -91,47 +91,49 @@ extern "C" {
     #define  KEY_LEFT             80
     #define  KEY_DOWN             81
     #define  KEY_UP               82
-    #define  KEY_KEYPAD_NUM_LOCK  83
-    #define  KEY_KEYPAD_DIVIDE    84
-    #define  KEY_KEYPAD_AT        85
-    #define  KEY_KEYPAD_MULTIPLY  85
-    #define  KEY_KEYPAD_MINUS     86
-    #define  KEY_KEYPAD_PLUS      87
-    #define  KEY_KEYPAD_ENTER     88
-    #define  KEY_KEYPAD_1         89
-    #define  KEY_KEYPAD_2         90
-    #define  KEY_KEYPAD_3         91
-    #define  KEY_KEYPAD_4         92
-    #define  KEY_KEYPAD_5         93
-    #define  KEY_KEYPAD_6         94
-    #define  KEY_KEYPAD_7         95
-    #define  KEY_KEYPAD_8         96
-    #define  KEY_KEYPAD_9         97
-    #define  KEY_KEYPAD_0         98
-    #define  KEY_VOLUME_MUTE     127
-    #define  KEY_VOLUME_UP       128
-    #define  KEY_VOLUME_DOWN     129
+    #define  KEY_PAD_NUM_LOCK  83
+    #define  KEY_PAD_DIVIDE    84
+    #define  KEY_PAD_AT        85
+    #define  KEY_PAD_MULTIPLY  85
+    #define  KEY_PAD_MINUS     86
+    #define  KEY_PAD_PLUS      87
+    #define  KEY_PAD_ENTER     88
+    #define  KEY_PAD_1         89
+    #define  KEY_PAD_2         90
+    #define  KEY_PAD_3         91
+    #define  KEY_PAD_4         92
+    #define  KEY_PAD_5         93
+    #define  KEY_PAD_6         94
+    #define  KEY_PAD_7         95
+    #define  KEY_PAD_8         96
+    #define  KEY_PAD_9         97
+    #define  KEY_PAD_0         98
+    #define  KEY_VOL_MUTE     127
+    #define  KEY_VOL_UP       128
+    #define  KEY_VOL_DOWN     129
 
-    #define KEY_EJECT            184
-    #define KEY_MUTE             226
+    #define  KEY_EJECT           184
+    #define  KEY_MUTE            226
 
-    #define  KEY_MODIFIER_NONE          0x00
-    #define  KEY_MODIFIER_LEFT_CTRL     0x01
-    #define  KEY_MODIFIER_LEFT_SHIFT    0x02
-    #define  KEY_MODIFIER_LEFT_ALT      0x04
-    #define  KEY_MODIFIER_LEFT_GUI      0x08
-    #define  KEY_MODIFIER_RIGHT_CTRL    0x10
-    #define  KEY_MODIFIER_RIGHT_SHIFT   0x20
-    #define  KEY_MODIFIER_RIGHT_ALT     0x40
-    #define  KEY_MODIFIER_RIGHT_GUI     0x80
+    #define  KEY_MOD_NONE       0x00
+    #define  KEY_MOD_CTL_L      0x01
+    #define  KEY_MOD_SFT_L      0x02
+    #define  KEY_MOD_ALT_L      0x04
+    #define  KEY_MOD_GUI_L      0x08
+    #define  KEY_MOD_CTL_R      0x10
+    #define  KEY_MOD_SFT_R      0x20
+    #define  KEY_MOD_ALT_R      0x40
+    #define  KEY_MOD_GUI_R      0x80
 
     // Mac
-    #define  KEY_MODIFIER_LEFT_OPT      KEY_MODIFIER_LEFT_ALT
-    #define  KEY_MODIFIER_LEFT_CMD      KEY_MODIFIER_LEFT_GUI
+    #define  KEY_MOD_OPT_L      KEY_MOD_ALT_L
+    #define  KEY_MOD_OPT_R      KEY_MOD_ALT_R
+    #define  KEY_MOD_CMD_L      KEY_MOD_GUI_L
+    #define  KEY_MOD_CMD_R      KEY_MOD_GUI_R
 
     // Windows
-    #define  KEY_MODIFIER_WINDOWS       KEY_MODIFIER_LEFT_GUI
-    #define  KEY_MODIFIER_MENU          KEY_MODIFIER_RIGHT_GUI
+    #define  KEY_MOD_WIN        KEY_MOD_GUI_L
+    #define  KEY_MOD_MENU       KEY_MOD_GUI_R
 
 #ifdef	__cplusplus
 }

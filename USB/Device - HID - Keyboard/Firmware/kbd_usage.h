@@ -126,10 +126,10 @@ extern "C" {
     #define  KEY_MOD_GUI_R      0x80
 
     // Mac
-    #define  KEY_MOD_OPT_L      KEY_MOD_ALT_L
-    #define  KEY_MOD_OPT_R      KEY_MOD_ALT_R
-    #define  KEY_MOD_CMD_L      KEY_MOD_GUI_L
-    #define  KEY_MOD_CMD_R      KEY_MOD_GUI_R
+    #define  KEY_MOD_OPT_L      KEY_MOD_GUI_L
+    #define  KEY_MOD_OPT_R      KEY_MOD_GUI_R
+    #define  KEY_MOD_CMD_L      KEY_MOD_ALT_L
+    #define  KEY_MOD_CMD_R      KEY_MOD_ALT_R
 
     // Windows
     #define  KEY_MOD_WIN        KEY_MOD_GUI_L

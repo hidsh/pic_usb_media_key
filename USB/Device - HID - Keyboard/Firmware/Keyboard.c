@@ -478,15 +478,15 @@ void ProcessIO(void)
             BlinkStatusValid = TRUE;
         }
     }
+#endif
 	
     //Check if we should assert a remote wakeup request to the USB host, when
     //the user presses the pushbutton.
-    if(sw2 == 0)
+    if(PORTC != 0b00111111)                         // hit any key
     {
         USBCBSendResume(); //Does nothing unless we are in USB suspend with remote wakeup armed.
     }
 
-#endif
     // User Application USB tasks
     if((USBDeviceState < CONFIGURED_STATE)||(USBSuspendControl==1)) return;
 

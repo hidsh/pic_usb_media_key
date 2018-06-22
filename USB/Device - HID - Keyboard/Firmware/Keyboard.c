@@ -122,7 +122,7 @@ volatile unsigned char hid_report_out[HID_INT_OUT_EP_SIZE] OUT_DATA_BUFFER_ADDRE
 #define SW_PRESS    0
 
 typedef enum {ROT_NA, ROT_FF, ROT_RW} eROT_DIR;
-eROT_DIR rot;
+eROT_DIR rot, rot_old;
 
 BYTE read_sw;				// read switch
 BYTE report[8];				// HID report TX buffer
@@ -140,7 +140,7 @@ typedef struct {
 } sSW_DATA;
 
 sSW_DATA sw_data[SW_MAX] = {
-	{SW_STAT_INIT, 0, 600}, 	// 0: sleep
+	{SW_STAT_INIT, 0, 800}, 	// 0: sleep
 	{SW_STAT_INIT, 0, 60},	 	// 1: backward
 	{SW_STAT_INIT, 0, 60}, 		// 2: play/pause
 	{SW_STAT_INIT, 0, 60}, 		// 3: forward
@@ -475,6 +475,7 @@ void UserInit(void)
 	INTCONbits.GIE    = 1;          // enable global int
 #endif
 	rot     = ROT_NA;
+	rot_old = ROT_NA;
 }//end UserInit
 
 
@@ -521,8 +522,7 @@ void ProcessIO(void)
 	
 	//Check if we should assert a remote wakeup request to the USB host, when
 	//the user presses the pushbutton.
-	if((rot != ROT_NA)
-	 ||((read_sw & 0x0b00111111) != 0b00111111)) {		// press any sw
+	if((read_sw & 0x0b00111111) != 0b00111111) {		// press any sw
 		USBCBSendResume();								//Does nothing unless we are in USB suspend with remote wakeup armed.
 	}
 
@@ -540,26 +540,26 @@ void ProcessIO(void)
 
 void read_rotary_encoder(void)
 {
-	static BYTE dat = 0;
+	static BYTE data = 0x00;
 	BYTE enc;
 
 	if(INTCONbits.RABIF == 0) return;
 	INTCONbits.RABIF = 0;                   // clear int flag
 
-	enc = PORTB & 0x30;                     // PORTB:00AB_0000
-	dat = ((dat << 2) & 0xC0) | enc;        // enc  :oonn_0000
-											//       ^  ^-- n:new value
-											//       +----- o:old value
-	switch (dat) {
-		case 0b11010000:                    // 3 -> 1
-			rot = ROT_FF;
-			break;
-		case 0b01110000:                    // 1 -> 3
-			rot = ROT_RW;
-			break;
-		default:
-			break;
-	}
+    enc = PORTB & 0x30;                     // PORTB:00AB_0000
+    data = ((data << 2) & 0xC0) | enc;        // enc  :oonn_0000
+										//       ^  ^-- n:new value
+										//       +----- o:old value
+    switch (data) {
+	case 0b11010000:                    // 3 -> 1
+		rot = ROT_FF;
+		break;
+	case 0b01110000:                    // 1 -> 3
+		rot = ROT_RW;
+		break;
+	default:
+		break;
+    }
 }
 
 void Keyboard(void)
@@ -573,67 +573,71 @@ void Keyboard(void)
 	k = &report[2];
 
 	// rotary encoder
-	if(rot == ROT_FF) {
+	if((rot == ROT_FF) && (rot_old == ROT_FF)) {
 		*k = KEY_VOL_UP;
 		rot = ROT_NA;
 	}
-	else if(rot == ROT_RW) {
+	else if((rot == ROT_RW) & (rot_old == ROT_RW)) {
 		*k = KEY_VOL_DOWN;
 		rot = ROT_NA;
 	}
-	else {
-		// switches
-		for(i=0; i<SW_MAX; i++) {
-			psw = &sw_data[i]; 
-			pressed = (read_sw & (1 << i))? FALSE : TRUE;	// HI:released, LO:pressed
-			switch(psw->stat) {
-				case SW_STAT_INIT:
-					if(pressed) {
-						if(psw->hold_cnt < psw->hold_max) {
-							psw->hold_cnt++;
-						}
-						else {
-							psw->hold_cnt = 0;
-							psw->stat = SW_STAT_KEEP;
-						}
-					}
-					break;
-				case SW_STAT_KEEP:
-					if(!pressed) {
-						psw->stat = SW_STAT_RELEASE;
-					}
-					break;
-				case SW_STAT_RELEASE:
-					psw->stat = SW_STAT_INIT;
-					switch(i) {
-						case 0:								// SLEEP		(Mac: cmd + opt + F12)
-							report[0] |= (KEY_MOD_CMD_L | KEY_MOD_OPT_L);
-							*k++ = KEY_F12;
-							break;
-						case 1:								// BACKWARD		(<-)
-							*k++ = KEY_LEFT;
-							break;
-						case 2:								// PLAY/PAUSE	(SPACE)
-							*k++ = KEY_SPACE;
-							break;
-						case 3:								// FORWARD		(->)
-							*k++ = KEY_RIGHT;
-							break;
-						case 4:								// FULL SCREEN	(Mac: cmd + ctrl + F)
-							report[0] |= (KEY_MOD_CMD_L | KEY_MOD_CTL_L);
-							*k++ = KEY_F;
-							break;
-						case 5:								// MUTE
-							*k++ = KEY_VOL_MUTE;
-							break;
-						default:
-							break;
-					}
-					break;
-				default:
-					break;
-			}
-		}
+    rot_old = rot;
+    
+    // switches
+    for(i=0; i<SW_MAX; i++) {
+        psw = &sw_data[i];
+        pressed = (read_sw & (1 << i))? FALSE : TRUE;	// HI:released, LO:pressed
+        switch(psw->stat) {
+            case SW_STAT_INIT:
+                if(pressed) {
+                    if(psw->hold_cnt < psw->hold_max) {
+                        psw->hold_cnt++;
+                    }
+                    else {
+                        psw->hold_cnt = 0;
+                        
+                        if(i == 0) {					// SLEEP		(Mac: cmd + opt + F12)
+                            report[0] |= (KEY_MOD_CMD_L | KEY_MOD_OPT_L);
+                            *k++ = KEY_F12;
+                        }
+                        psw->stat = SW_STAT_KEEP;
+                    }
+                }
+                break;
+            case SW_STAT_KEEP:
+                if(!pressed) {
+                    psw->stat = SW_STAT_RELEASE;
+                }
+                break;
+            case SW_STAT_RELEASE:
+                psw->stat = SW_STAT_INIT;
+                switch(i) {
+                    case 0:								// SLEEP		(Mac: cmd + opt + F12)
+                        memset(report, 0, sizeof(report));
+                        break;
+                    case 1:								// BACKWARD		(<<)
+                        *k++ = KEY_LEFT;
+                        break;
+                    case 2:								// PLAY/PAUSE	(SPACE)
+                        *k++ = KEY_SPACE;
+                        break;
+                    case 3:								// FORWARD		(>>)
+                        *k++ = KEY_RIGHT;
+                        break;
+                    case 4:								// FULL SCREEN	(Mac: cmd + ctrl + F)
+                        report[0] |= (KEY_MOD_CMD_L | KEY_MOD_CTL_L);
+                        *k++ = KEY_F;
+                        break;
+                    case 5:								// MUTE
+                        *k++ = KEY_VOL_MUTE;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
 	}
 	//Send the 8 byte packet over USB to the host.
 	lastINTransmission = HIDTxPacket(HID_EP, report, 8);

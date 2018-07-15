@@ -534,7 +534,7 @@ void ProcessIO(void)
 	if(HIDTxHandleBusy(lastINTransmission)) return;
 	
 	//Call the function that behaves like a keyboard  
-	Keyboard();        
+ 	Keyboard();        
 	 
 }//end ProcessIO
 
@@ -574,11 +574,11 @@ void Keyboard(void)
 
 	// rotary encoder
 	if((rot == ROT_FF) && (rot_old == ROT_FF)) {
-		*k = KEY_VOL_UP;
+		*k = KEY_VOL_DOWN;
 		rot = ROT_NA;
 	}
 	else if((rot == ROT_RW) & (rot_old == ROT_RW)) {
-		*k = KEY_VOL_DOWN;
+		*k = KEY_VOL_UP;
 		rot = ROT_NA;
 	}
     rot_old = rot;
@@ -614,21 +614,21 @@ void Keyboard(void)
                 switch(i) {
                     case 0:								// SLEEP		(Mac: cmd + opt + F12)
                         memset(report, 0, sizeof(report));
-                        break;
+                         break;
                     case 1:								// BACKWARD		(<<)
                         *k++ = KEY_LEFT;
                         break;
-                    case 2:								// PLAY/PAUSE	(SPACE)
+                    case 2:						   		// PLAY/PAUSE	(SPACE)
                         *k++ = KEY_SPACE;
                         break;
-                    case 3:								// FORWARD		(>>)
+                    case 5:								// FORWARD		(>>)
                         *k++ = KEY_RIGHT;
                         break;
                     case 4:								// FULL SCREEN	(Mac: cmd + ctrl + F)
-                        report[0] |= (KEY_MOD_CMD_L | KEY_MOD_CTL_L);
+                        report[0] |= (KEY_MOD_GUI_L | KEY_MOD_CTL_L);
                         *k++ = KEY_F;
                         break;
-                    case 5:								// MUTE
+                    case 3:								// MUTE
                         *k++ = KEY_VOL_MUTE;
                         break;
                     default:
